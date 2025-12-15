@@ -1,9 +1,9 @@
 from ortools.sat.python import cp_model
-import json
-import re
-from itertools import product
+import json #loading course data
+import re # regex for parsing 
+from itertools import product # for cartesian product of prereq paths
 from dept import Electrical   # import your dept dictionary
-from user import UserData
+from user import UserData # import your user class
 
 CONFIG = {
     "TOTAL_TARGET_CREDITS": 150,   # EE degree requirement
@@ -23,7 +23,7 @@ def parse_prereqs(prereq_string):
     - 'and' means the course is required in all combinations
     - 'or' within parentheses creates alternative paths
     """
-    if not prereq_string or prereq_string.strip() in ["", "[]", "None"]:
+    if not prereq_string or prereq_string.strip() in ["", "[]", "None"]: # no prereqs
         return []
     
     # Remove outer brackets if present
@@ -81,27 +81,40 @@ def parse_prereqs(prereq_string):
     return result
 
 
+def parse_overlaps(overlap_string):
+    """
+    Parse overlap string into a list of course codes.
+
+    Input:  "ELL784, ELL789, COL341/COL774"
+    Output: ['ELL784', 'ELL789', 'COL341', 'COL774']
+    """
+    if not overlap_string or overlap_string.strip() in ["", "None"]:
+        return []
+    
+    # Replace '/' with ',' then split
+    cleaned = overlap_string.replace('/', ',')
+    overlap_list = [code.strip() for code in cleaned.split(',') if code.strip()]
+    
+    return overlap_list
+
+
+
 # 1️⃣ Load master data JSON
 with open("data.json", "r") as f:
-    all_courses = json.load(f)  # dict with course_code as key
+    all_courses = json.load(f)  # dict with course_code as key and details as value (credits, prereqs, desc, name) eg:{"ELL101": {"credits": 4, "prereqs": "[MAL111]"}}
+
+
 
 # 2️⃣ Extract recommended courses semester-wise
-recommended_courses = Electrical["recommended"]
-dept_code = Electrical["code"]
+recommended_courses = Electrical["recommended"] # list of lists with key "recommended" and value as list of lists containing course codes and semester wise
+dept_code = Electrical["code"]  #from dept import Electrical already mentioned above
 
-selected_courses = {}
+selected_courses = {} #Empty dict that will hold semester → course objects
 
-for sem_idx, course_list in enumerate(recommended_courses, start=1):
-    selected_courses[sem_idx] = []
+for sem_idx, course_list in enumerate(recommended_courses, start=1):   #Iterates semester by semester.course_list → list of course codes for that semester.
+    selected_courses[sem_idx] = [] #Initializes an empty list for each semester in selected_courses.
     for course_code in course_list:
-        if course_code in all_courses:
-            # Parse prerequisites for core courses
-            prereq_string = all_courses[course_code].get("prereqs", "")
-            all_courses[course_code]["prereqs_parsed"] = parse_prereqs(prereq_string)
-            all_courses[course_code]["type"] = "Core"
-            selected_courses[sem_idx].append(all_courses[course_code])
-            
-        elif course_code == "DE":
+        if course_code == "DE":
             for de_code in Electrical["courses"]["DE"]:
                 if de_code in all_courses:
                     # Parse prerequisites for DE courses
@@ -129,8 +142,17 @@ for sem_idx, course_list in enumerate(recommended_courses, start=1):
                     course_data["prereqs_parsed"] = parse_prereqs(prereq_string)
                     course_data["type"] = "HUL3XX"
                     selected_courses[sem_idx].append(course_data)
+
+        elif course_code in all_courses:
+            # Parse prerequisites for core courses
+            prereq_string = all_courses[course_code].get("prereqs", "")
+            all_courses[course_code]["prereqs_parsed"] = parse_prereqs(prereq_string)
+            all_courses[course_code]["type"] = "Core"
+            selected_courses[sem_idx].append(all_courses[course_code])
+
         else:
             print(f"⚠ Warning: {course_code} not found in data.json")
+
 
 # 3️⃣ Save to a JSON file (optional)
 output_file = f"{dept_code}_courses_data.json"
@@ -142,7 +164,7 @@ print(f"✅ Prerequisites parsed for all courses")
 
 
 
-user= UserData(name="Monisha",current_semester=4,EE_courses=selected_courses,completed_corecourses= ['ELL101',   'PYL101',   'MCP100','MTL100','COL100','PYP100','MCP101','APL100','CML101','MTL101','CMP100','ELL205','ELL203','ELL201','COL106','ELL202','ELP101'])
+user= UserData(name="Snehal",current_semester=4,EE_courses=selected_courses,completed_corecourses= ['ELL101',   'PYL101',   'MCP100','MTL100','COL100','PYP100','MCP101','APL100','CML101','MTL101','CMP100','ELL205','ELL203','ELL201','COL106','ELL202','ELP101'])
 user.print_summary(debug=True)
 with open("EE_courses.json", "w") as f:
     json.dump(user.EE_courses, f, indent=4)
@@ -205,6 +227,77 @@ for sem in sorted(courses_left.keys()):
     core_count = sum(1 for c in courses_left[sem] if c.get("type") == "Core")
     print(f"  Semester {sem}: {len(courses_left[sem])} courses ({core_count} Core, {hul_count} HUL, {de_count} DE)")
 # Save courses_left
+
+# --- Add this in planner.py, after courses_left is built ---
+
+from transformers import pipeline
+from huggingface_hub import login
+# Initialize the text-generation pipeline (using Hugging Face GPT-2)
+generator = pipeline("text-generation", model="gpt2")
+
+def interpret_user_request(prompt, courses_left):
+    """
+    Interpret a natural-language user request and return a dict of modifications.
+    Example:
+        prompt = "I want to take COL341 next semester"
+        returns: {"add": ["COL341"], "remove": []}
+    """
+    instruction = f"""
+    You are a course planning assistant. The user gives a natural language request,
+    and you must return a JSON object with two keys: "add" and "remove",
+    containing lists of course codes to add or remove from their remaining courses.
+    
+    User request: "{prompt}"
+    """
+    
+    result = generator(instruction, max_length=100)[0]['generated_text']
+    
+    # Try to parse JSON-like output
+    import re, json
+    match = re.search(r'\{.*\}', result, re.DOTALL)
+    if match:
+        try:
+            modifications = json.loads(match.group())
+            return modifications
+        except json.JSONDecodeError:
+            return {"add": [], "remove": []}
+    else:
+        return {"add": [], "remove": []}
+
+
+def apply_user_modifiers(courses_left, modifications):
+    """
+    Apply user's "add" and "remove" requests to courses_left.
+    """
+    for sem, courses in courses_left.items():
+        # Remove courses
+        courses_left[sem] = [c for c in courses if c["code"] not in modifications.get("remove", [])]
+        
+        # Add courses if not already present
+        for code in modifications.get("add", []):
+            if not any(c["code"] == code for c in courses_left[sem]):
+                # Try to fetch from all_courses
+                if code in all_courses:
+                    courses_left[sem].append(all_courses[code])
+    
+    return courses_left
+# --- AFTER building courses_left ---
+
+prompt = input("Enter your course request in natural language: ")
+mods = interpret_user_request(prompt, courses_left)
+
+# Debug print to see what the model interpreted
+print(f"📝 User modifications: {mods}")
+
+# Apply modifications in-place
+courses_left = apply_user_modifiers(courses_left, mods)
+
+# Debug: show courses left after modifications
+for sem in sorted(courses_left.keys()):
+    print(f"  Sem {sem}: {[c['code'] for c in courses_left[sem]]}")
+
+# 4️⃣ SETUP AND SOLVE CONSTRAINT PROGRAMMING MODEL
+
 
 model = cp_model.CpModel()
 course_vars = {}
@@ -361,6 +454,23 @@ for sem, courses in courses_left.items():
 
             if core_vars:  # only if found
                 model.Add(sum(core_vars) == 1)
+
+# CONSTRAINT 6: OVERLAPPING COURSES CANNOT BE TAKEN IN THE SAME SEMESTER
+overlap_string = Electrical.get("overlaps", "")
+overlap_list = parse_overlaps(overlap_string)  # This is now a list
+
+# Add constraints so that no two overlapping courses are in the same semester
+for sem in courses_left.keys():
+    for i in range(len(overlap_list)):
+        for j in range(i + 1, len(overlap_list)):
+            course1 = overlap_list[i]
+            course2 = overlap_list[j]
+            if (sem, course1) in course_vars and (sem, course2) in course_vars:
+                model.Add(course_vars[(sem, course1)] + course_vars[(sem, course2)] <= 1)
+
+print("Overlap constraints added")
+
+
 
 
 
