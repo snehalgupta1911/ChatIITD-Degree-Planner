@@ -1,5 +1,0 @@
-pandas
-openpyxl
-numpy
-sentence-transformers
-torch
