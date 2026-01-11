@@ -1,5 +1,5 @@
 class UserData:
-    def __init__(self, name="Student", dept="EE1", current_semester=1, EE_courses=None, 
+    def __init__(self, name="Student", dept="EE1", current_semester=1, core_courses=None, 
                   completed_corecourses=None, completed_hul=None, completed_DE=None, 
                  num_semesters=8, min_credits=15, max_credits=24, preferences=None,
                  completed_hul_sem=None, completed_DE_sem=None):
@@ -14,7 +14,7 @@ class UserData:
         self.min_credits = min_credits
         self.max_credits = max_credits
         self.preferences = preferences if preferences else {} 
-        self.EE_courses = EE_courses if EE_courses else {} 
+        self.core_courses = core_courses if core_courses else {} 
         self.completed_hul = completed_hul if completed_hul else []
         self.completed_DE = completed_DE if completed_DE else []
         self.completed_hul_sem = completed_hul_sem if completed_hul_sem else {}
@@ -25,9 +25,9 @@ class UserData:
             self.completed_corecourses = completed_corecourses
         else:
             self.completed_corecourses = []
-            if EE_courses:
+            if core_courses:
                 for sem in range(1, current_semester):
-                    for course in EE_courses.get(sem, []):
+                    for course in core_courses.get(sem, []):
                         if course.get("type") == "Core":
                             self.completed_corecourses.append(course["code"])
 
@@ -88,11 +88,11 @@ class UserData:
         - Courses already completed in PAST semesters
         - But keeping HUL/DE available for FUTURE planning if not yet completed
         """
-        if semester not in self.EE_courses:
+        if semester not in self.core_courses:
             return []
         
         available = []
-        for course in self.EE_courses[semester]:
+        for course in self.core_courses[semester]:
             course_code = course["code"]
             course_type = course.get("type", "")
             
@@ -130,10 +130,10 @@ class UserData:
         found_courses = []
         not_found_courses = []
         
-        if self.EE_courses:
+        if self.core_courses:
             for completed_code in all_completed:
                 found = False
-                for sem, courses in self.EE_courses.items():
+                for sem, courses in self.core_courses.items():
                     for course in courses:
                         if course["code"] == completed_code:
                             credits = course.get("credits", 0)
@@ -161,7 +161,7 @@ class UserData:
             for fc in found_courses:
                 print(f"  - {fc}")
             if not_found_courses:
-                print(f"\n⚠️ Courses not found in EE_courses (not counted):")
+                print(f"\n⚠️ Courses not found in core_courses (not counted):")
                 for nfc in not_found_courses:
                     print(f"  - {nfc}")
         

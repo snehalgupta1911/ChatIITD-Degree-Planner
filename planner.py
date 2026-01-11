@@ -151,7 +151,7 @@ def calculate_credits_done(user: UserData) -> float:
     credits_done = 0
     seen_courses = set()
     
-    for sem, courses in user.EE_courses.items():
+    for sem, courses in user.core_courses.items():
         for course in courses:
             code = course["code"]
             if code in seen_courses:
@@ -189,7 +189,7 @@ def main():
     user = UserData(
         name="Snehal",
         current_semester=4,
-        EE_courses=selected_courses,
+        core_courses=selected_courses,
         completed_corecourses=[
             'ELL101', 'PYL101', 'MCP100', 'MTL100', 'COL100', 'PYP100', 'MCP101',
             'APL100', 'CML101', 'MTL101', 'CMP100', 'ELL205', 'ELL203', 'ELL201',
