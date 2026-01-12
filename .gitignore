@@ -9,3 +9,4 @@ __pycache__/
 !@
 
 courses_left.json
+*_courses_data.json

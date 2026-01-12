@@ -187,7 +187,7 @@ def main():
     
     # Create user (this would come from user input in a real app)
     user = UserData(
-        name="Snehal",
+        name="Monisha",
         current_semester=4,
         core_courses=selected_courses,
         completed_corecourses=[
@@ -240,6 +240,10 @@ def main():
     overlap_list = parse_overlaps(overlap_string)
     planner.add_overlap_constraints(courses_left, overlap_list)
     print("Overlap constraints added")
+
+    #ADD slotting constraints 
+    planner.add_slotting_constraints(courses_left)
+    print("Slotting constraints added")
     
     # Print pre-solve debug info
     remaining_target = (CONFIG["TOTAL_TARGET_CREDITS"] - credits_done) * CONFIG["CREDIT_SCALE"]

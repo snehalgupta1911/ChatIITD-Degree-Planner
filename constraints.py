@@ -4,6 +4,11 @@ Constraint model builder for degree planning using OR-Tools CP-SAT solver.
 
 from ortools.sat.python import cp_model
 from data_loader import parse_prereqs
+from slotting.slotparsing import load_slot_dataframe
+
+slot_df=load_slot_dataframe()
+print(slot_df.head())
+
 
 
 class DegreePlannerModel:
@@ -200,3 +205,59 @@ class DegreePlannerModel:
     def get_course_vars(self) -> dict:
         """Return the course variable mapping."""
         return self.course_vars
+    
+    def add_slotting_constraints(self, courses_left: dict):
+        """
+        Add slotting constraints:
+        - No two courses with the same slot can be taken in the same semester.
+        Also prints debug information.
+        
+        Args:
+            courses_left: Remaining courses by semester
+        """
+        print("\n[DEBUG] Adding slotting constraints")
+
+        for sem, courses in courses_left.items():
+            print(f"\n[DEBUG] Semester {sem}")
+
+            # Filter slot_df for this semester
+            # Map planner semester to slot semester
+            slot_sem = 1 if sem % 2 == 1 else 2
+
+            print(f"[DEBUG] Planner sem {sem} -> Slot sem {slot_sem}")
+
+            sem_slot_df = slot_df[
+                slot_df["Semester"].astype(int) == slot_sem
+            ] #if odd sem using sem1 data- winter sem and if even sem using sem 2 data - summer sem 
+
+            # Build mapping: slot -> list of course codes
+            slot_to_courses = (
+                sem_slot_df.groupby("Slot Name")["Course Code"]
+                .apply(list)
+                .to_dict()
+            )
+
+            for slot, codes_in_slot in slot_to_courses.items():
+                # Keep only courses that actually exist in this semester's variables
+                vars_in_slot = [
+                    self.course_vars[(sem, code)]
+                    for code in codes_in_slot
+                    if (sem, code) in self.course_vars
+                ]
+
+                if len(vars_in_slot) > 1:
+                    # Debug print
+                    active_codes = [
+                    code for code in codes_in_slot
+                    if (sem, code) in self.course_vars
+                    ]
+
+                    if len(active_codes) > 1:
+                        print(f"  Slot {slot}: {active_codes}")
+                        print(f"    -> Constraint: sum(vars) <= 1")
+
+                    #print(f"    -> Constraint: sum(vars) <= 1")
+
+                    # OR-Tools constraint
+                    self.model.Add(sum(vars_in_slot) <= 1)
+
