@@ -104,7 +104,7 @@ def print_feasibility_check(courses_left: dict, credits_done: float,
     max_possible = num_future_sems * max_credits
     target_needed = remaining_target / scale
     
-    print(f"\n📊 Feasibility check:")
+    print("\n📊 Feasibility check:")
     print(f"  Future semesters: {num_future_sems}")
     print(f"  Possible credit range: {min_possible} - {max_possible}")
     print(f"  Target needed: {target_needed}")

@@ -406,7 +406,7 @@ class CourseScraper:
         print("="*60)
         print(f"Total courses: {course_count}")
         print(f"Total students: {student_count}")
-        print(f"\nTop 5 courses by enrollment:")
+        print("\nTop 5 courses by enrollment:")
         for course_id, course_name, count in top_courses:
             print(f"  {course_id}: {course_name} ({count} students)")
         print("="*60 + "\n")

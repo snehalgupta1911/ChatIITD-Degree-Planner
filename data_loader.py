@@ -5,7 +5,6 @@ Includes parsing functions for prerequisite and overlap strings.
 """
 
 import json
-import os
 import re
 from itertools import product
 from pathlib import Path

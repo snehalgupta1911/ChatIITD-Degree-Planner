@@ -203,10 +203,10 @@ def main():
     
     # Save courses_left
     save_json(courses_left, "courses_left.json")
-    print(f"\n✅ Courses left saved to 'courses_left.json'")
+    print("\n✅ Courses left saved to 'courses_left.json'")
     
     # Print summary
-    print(f"\n📊 Summary:")
+    print("\n📊 Summary:")
     for sem in sorted(courses_left.keys()):
         hul_count = sum(1 for c in courses_left[sem] if c.get("type", "").startswith("HUL"))
         de_count = sum(1 for c in courses_left[sem] if c.get("type") == "DE")

@@ -156,12 +156,12 @@ class UserData:
         print(f"Credit Limits: {self.min_credits}-{self.max_credits}")
         
         if debug:
-            print(f"\n🔍 Debug Info:")
-            print(f"Found courses with credits:")
+            print("\n🔍 Debug Info:")
+            print("Found courses with credits:")
             for fc in found_courses:
                 print(f"  - {fc}")
             if not_found_courses:
-                print(f"\n⚠️ Courses not found in core_courses (not counted):")
+                print("\n⚠️ Courses not found in core_courses (not counted):")
                 for nfc in not_found_courses:
                     print(f"  - {nfc}")
         

@@ -3,7 +3,6 @@ Constraint model builder for degree planning using OR-Tools CP-SAT solver.
 """
 
 from ortools.sat.python import cp_model
-from data_loader import parse_prereqs
 
 
 class DegreePlannerModel:
