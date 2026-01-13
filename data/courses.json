@@ -9975,11 +9975,11 @@
         "name": "Introduction to Electrical Engineering",
         "prereqs": "[]",
         "overlap": "",
-        "credits": 0,
+        "credits": 1.0,
         "hours": {
             "lecture": 0,
             "tutorial": 0,
-            "practical": 0
+            "practical": 2
         },
         "description": "(Laboratory) 1 Credit (0-0-2) CRO (mechanism and usage). KCL, KVL, Network theorem verification. Step/transient response of RL, RC, RLC, circuits. Steady state response of Circuits of sinusoidal excitation. Diode experiment (clipping, clamping and rectification). Basic circuits using opamp. Transformers oC and SC tests. BH loop in an iron core, DC and AC motor \u2013 for observation only. A small mini-project."
     },

@@ -1,38 +1,286 @@
+:root {
+  /* Color Palette - "Premium Technical" */
+  --primary: #0f172a;
+  /* Slate 900 */
+  --primary-light: #1e293b;
+  /* Slate 800 */
+  --secondary: #3b82f6;
+  /* Blue 500 */
+  --secondary-hover: #2563eb;
+  /* Blue 600 */
+  --accent: #06b6d4;
+  /* Cyan 500 */
+
+  --bg-color: #f8fafc;
+  /* Slate 50 */
+  --surface: #ffffff;
+  --surface-secondary: #f1f5f9;
+  /* Slate 100 */
+
+  --text-main: #334155;
+  /* Slate 700 */
+  --text-light: #64748b;
+  /* Slate 500 */
+  --text-white: #ffffff;
+
+  --border: #e2e8f0;
+  /* Slate 200 */
+
+  /* Spacing & Layout */
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --border-radius: 8px;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+}
+
+/* Reset & Base */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  background-color: var(--bg-color);
+  color: var(--text-main);
+  line-height: 1.5;
+}
+
+/* App Container */
 .App {
-  text-align: center;
-}
-
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
-}
-
-.App-header {
-  background-color: #282c34;
   min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Header */
+.App-header {
+  background-color: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: var(--spacing-md) var(--spacing-lg);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  box-shadow: var(--shadow-sm);
+}
+
+.header-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+/* Controls */
+.controls {
+  display: flex;
+  gap: var(--spacing-md);
+  align-items: center;
+}
+
+.programme-select {
+  padding: var(--spacing-sm) var(--spacing-md);
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius);
+  background-color: var(--surface);
+  color: var(--text-main);
+  font-size: 0.95rem;
+  outline: none;
+  min-width: 200px;
+  cursor: pointer;
+}
+
+.programme-select:focus {
+  border-color: var(--secondary);
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+}
+
+.generate-btn {
+  padding: var(--spacing-sm) var(--spacing-lg);
+  background-color: var(--secondary);
+  color: var(--text-white);
+  border: none;
+  border-radius: var(--border-radius);
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: var(--shadow-sm);
+}
+
+.generate-btn:hover {
+  background-color: var(--secondary-hover);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+.generate-btn:active {
+  transform: translateY(0);
+}
+
+/* Main Content Area */
+.main-content {
+  flex: 1;
+  padding: var(--spacing-lg);
+  overflow: auto;
+}
+
+/* Degree Matrix Grid Layout */
+.degree-matrix-container {
+  background-color: var(--surface);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow-md);
+  padding: var(--spacing-lg);
+  overflow-x: auto;
+}
+
+.degree-matrix-grid {
+  display: grid;
+  /* Grid template columns will be set via inline styles dynamically */
+  gap: var(--spacing-md);
+  min-width: max-content;
+}
+
+/* Column Headers */
+.grid-header-cell {
+  padding: var(--spacing-sm) var(--spacing-md);
+  background-color: var(--surface-secondary);
+  color: var(--text-light);
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  border-radius: 4px;
+  text-align: center;
+  letter-spacing: 0.05em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Semester Row Indicator */
+.semester-row-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--primary-light);
+  color: var(--text-white);
+  font-weight: 700;
+  border-radius: var(--border-radius);
+  font-size: 1.1rem;
+  padding: var(--spacing-md);
+  min-height: 120px;
+}
+
+/* Course Card */
+.course-card {
+  background-color: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--border-radius);
+  padding: var(--spacing-md);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 120px;
+  transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.course-card:not(.empty-card):hover {
+  border-color: var(--secondary);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.course-card.empty-card {
+  border-style: dashed;
+  background-color: transparent;
+  opacity: 0.5;
+}
+
+.course-code {
+  font-weight: 700;
+  color: var(--text-main);
+  font-size: 1rem;
+  margin-bottom: var(--spacing-xs);
+}
+
+.course-title {
+  font-size: 0.85rem;
+  color: var(--text-light);
+  line-height: 1.3;
+  margin-bottom: var(--spacing-sm);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.course-credits {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--secondary);
+  background-color: rgba(59, 130, 246, 0.1);
+  padding: 2px 8px;
+  border-radius: 12px;
+  align-self: flex-start;
+}
+
+/* Total Credits Cell */
+.total-credits-cell {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  font-size: calc(10px + 2vmin);
-  color: white;
+  background-color: var(--surface-secondary);
+  border-radius: var(--border-radius);
+  font-weight: 700;
+  color: var(--primary);
+  border: 1px solid var(--border);
 }
 
-.App-link {
-  color: #61dafb;
+.total-label {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  color: var(--text-light);
+  margin-bottom: 2px;
 }
 
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+.total-value {
+  font-size: 1.2rem;
+}
+
+/* Loading/Error States */
+.placeholder-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 60vh;
+  color: var(--text-light);
+}
+
+.placeholder-icon {
+  font-size: 4rem;
+  margin-bottom: var(--spacing-md);
+  opacity: 0.2;
+}
+
+.placeholder-text {
+  font-size: 1.2rem;
+  font-weight: 500;
 }

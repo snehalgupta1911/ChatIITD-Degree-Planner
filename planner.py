@@ -25,13 +25,14 @@ CONFIG = {
 }
 
 
-def build_selected_courses(department: dict, all_courses: dict) -> dict:
+def build_selected_courses(department: dict, all_courses: dict, expand: bool = True) -> dict:
     """
     Build semester-wise course selection based on department recommendations.
     
     Args:
         department: Department structure with recommended courses
         all_courses: All available courses
+        expand: Whether to expand placeholders like HUL3XX into all matching courses
     
     Returns:
         Dict mapping semester -> list of course dicts
@@ -45,37 +46,68 @@ def build_selected_courses(department: dict, all_courses: dict) -> dict:
         for course_code in course_list:
             # Handle DE (Department Elective) placeholders
             if course_code.startswith("DE"):
-                for de_code in department["courses"].get("DE", []):
-                    if de_code in all_courses:
-                        course = all_courses[de_code].copy()
-                        prereq_string = course.get("prereqs", "")
-                        course["prereqs_parsed"] = parse_prereqs(prereq_string)
-                        course["type"] = "DE"
-                        selected_courses[sem_idx].append(course)
+                if expand:
+                    for de_code in department["courses"].get("DE", []):
+                        if de_code in all_courses:
+                            course = all_courses[de_code].copy()
+                            prereq_string = course.get("prereqs", "")
+                            course["prereqs_parsed"] = parse_prereqs(prereq_string)
+                            course["type"] = "DE"
+                            selected_courses[sem_idx].append(course)
+                else:
+                    # Creating a placeholder object
+                    selected_courses[sem_idx].append({
+                        "code": course_code,
+                        "title": "Department Elective",
+                        "credits": 3, # Assuming standard 3 credits
+                        "type": "DE"
+                    })
             
             # Handle HUL2XX placeholder
             elif course_code == "HUL2XX":
-                for code, course_data in all_courses.items():
-                    if code.startswith("HUL2"):
-                        course = course_data.copy()
-                        prereq_string = course.get("prereqs", "")
-                        course["prereqs_parsed"] = parse_prereqs(prereq_string)
-                        course["type"] = "HUL2XX"
-                        selected_courses[sem_idx].append(course)
+                if expand:
+                    for code, course_data in all_courses.items():
+                        if code.startswith("HUL2"):
+                            course = course_data.copy()
+                            prereq_string = course.get("prereqs", "")
+                            course["prereqs_parsed"] = parse_prereqs(prereq_string)
+                            course["type"] = "HUL2XX"
+                            selected_courses[sem_idx].append(course)
+                else:
+                     selected_courses[sem_idx].append({
+                        "code": course_code,
+                        "title": "Humanities (Level 200)",
+                        "credits": 3, # Standard
+                        "type": "HUL2XX"
+                    })
             
             # Handle HUL3XX placeholder
             elif course_code == "HUL3XX":
-                for code, course_data in all_courses.items():
-                    if code.startswith("HUL3"):
-                        course = course_data.copy()
-                        prereq_string = course.get("prereqs", "")
-                        course["prereqs_parsed"] = parse_prereqs(prereq_string)
-                        course["type"] = "HUL3XX"
-                        selected_courses[sem_idx].append(course)
+                if expand:
+                    for code, course_data in all_courses.items():
+                        if code.startswith("HUL3"):
+                            course = course_data.copy()
+                            prereq_string = course.get("prereqs", "")
+                            course["prereqs_parsed"] = parse_prereqs(prereq_string)
+                            course["type"] = "HUL3XX"
+                            selected_courses[sem_idx].append(course)
+                else:
+                    selected_courses[sem_idx].append({
+                        "code": course_code,
+                        "title": "Humanities (Level 300)",
+                        "credits": 3,
+                        "type": "HUL3XX"
+                    })
             
-            # Handle OC (Open Course) placeholders - skip for now
+            # Handle OC (Open Course) placeholders
             elif course_code.startswith("OC"):
-                continue
+                # Always add placeholder for OC as we generally don't expand ALL courses for OC
+                selected_courses[sem_idx].append({
+                        "code": course_code,
+                        "title": "Open Category Elective",
+                        "credits": 3,
+                        "type": "OC"
+                    })
             
             # Regular course
             elif course_code in all_courses:
@@ -83,10 +115,28 @@ def build_selected_courses(department: dict, all_courses: dict) -> dict:
                 prereq_string = course.get("prereqs", "")
                 course["prereqs_parsed"] = parse_prereqs(prereq_string)
                 course["type"] = "Core"
+                
+                # Normalize 'name' to 'title'
+                if "name" in course and "title" not in course:
+                    course["title"] = course["name"]
+                
+                # Normalize 'hours' to l, t, p
+                if "hours" in course:
+                    course["l"] = course["hours"].get("lecture", 0)
+                    course["t"] = course["hours"].get("tutorial", 0)
+                    course["p"] = course["hours"].get("practical", 0)
+                
                 selected_courses[sem_idx].append(course)
             
             else:
-                print(f"⚠ Warning: {course_code} not found in courses.json")
+                # If course not found but requested (maybe a specific code), just add it nicely
+                 selected_courses[sem_idx].append({
+                        "code": course_code,
+                        "title": "Unknown Course",
+                        "credits": 0,
+                        "l": 0, "t": 0, "p": 0,
+                        "type": "Unknown"
+                    })
     
     return selected_courses
 
