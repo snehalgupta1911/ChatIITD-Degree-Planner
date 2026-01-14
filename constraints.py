@@ -210,6 +210,9 @@ class DegreePlannerModel:
         """
         Add slotting constraints:
         - No two courses with the same slot can be taken in the same semester.
+        - EXCEPTION: Lab courses (XXP) and Lecture courses (XXL etc) are treated separately.
+          - Sum(Labs in Slot X) <= 1
+          - Sum(Lectures in Slot X) <= 1
         Also prints debug information.
         
         Args:
@@ -238,26 +241,30 @@ class DegreePlannerModel:
             )
 
             for slot, codes_in_slot in slot_to_courses.items():
-                # Keep only courses that actually exist in this semester's variables
-                vars_in_slot = [
-                    self.course_vars[(sem, code)]
-                    for code in codes_in_slot
-                    if (sem, code) in self.course_vars
-                ]
-
-                if len(vars_in_slot) > 1:
-                    # Debug print
-                    active_codes = [
+                # Filter for active courses in this semester
+                active_codes = [
                     code for code in codes_in_slot
                     if (sem, code) in self.course_vars
-                    ]
+                ]
+                
+                if not active_codes:
+                    continue
 
-                    if len(active_codes) > 1:
-                        print(f"  Slot {slot}: {active_codes}")
-                        print(f"    -> Constraint: sum(vars) <= 1")
-
-                    #print(f"    -> Constraint: sum(vars) <= 1")
-
-                    # OR-Tools constraint
-                    self.model.Add(sum(vars_in_slot) <= 1)
+                # Split into Labs (XXP) and Lectures (Others)
+                lab_codes = [c for c in active_codes if len(c) > 2 and c[2] == 'P'] # Assuming format ELP123
+                lecture_codes = [c for c in active_codes if len(c) <= 2 or c[2] != 'P']
+                
+                # Apply constraints for Labs
+                if len(lab_codes) > 1:
+                    print(f"  Slot {slot} (Labs): {lab_codes}")
+                    print(f"    -> Constraint: sum(vars) <= 1")
+                    lab_vars = [self.course_vars[(sem, code)] for code in lab_codes]
+                    self.model.Add(sum(lab_vars) <= 1)
+                
+                # Apply constraints for Lectures
+                if len(lecture_codes) > 1:
+                    print(f"  Slot {slot} (Lectures): {lecture_codes}")
+                    print(f"    -> Constraint: sum(vars) <= 1")
+                    lecture_vars = [self.course_vars[(sem, code)] for code in lecture_codes]
+                    self.model.Add(sum(lecture_vars) <= 1)
 
