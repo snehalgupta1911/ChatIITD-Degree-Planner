@@ -25,14 +25,13 @@ CONFIG = {
 }
 
 
-def build_selected_courses(department: dict, all_courses: dict, expand: bool = True) -> dict:
+def build_selected_courses(department: dict, all_courses: dict) -> dict:
     """
     Build semester-wise course selection based on department recommendations.
     
     Args:
         department: Department structure with recommended courses
         all_courses: All available courses
-        expand: Whether to expand placeholders like HUL3XX into all matching courses
     
     Returns:
         Dict mapping semester -> list of course dicts
@@ -46,68 +45,37 @@ def build_selected_courses(department: dict, all_courses: dict, expand: bool = T
         for course_code in course_list:
             # Handle DE (Department Elective) placeholders
             if course_code.startswith("DE"):
-                if expand:
-                    for de_code in department["courses"].get("DE", []):
-                        if de_code in all_courses:
-                            course = all_courses[de_code].copy()
-                            prereq_string = course.get("prereqs", "")
-                            course["prereqs_parsed"] = parse_prereqs(prereq_string)
-                            course["type"] = "DE"
-                            selected_courses[sem_idx].append(course)
-                else:
-                    # Creating a placeholder object
-                    selected_courses[sem_idx].append({
-                        "code": course_code,
-                        "title": "Department Elective",
-                        "credits": 3, # Assuming standard 3 credits
-                        "type": "DE"
-                    })
+                for de_code in department["courses"].get("DE", []):
+                    if de_code in all_courses:
+                        course = all_courses[de_code].copy()
+                        prereq_string = course.get("prereqs", "")
+                        course["prereqs_parsed"] = parse_prereqs(prereq_string)
+                        course["type"] = "DE"
+                        selected_courses[sem_idx].append(course)
             
             # Handle HUL2XX placeholder
             elif course_code == "HUL2XX":
-                if expand:
-                    for code, course_data in all_courses.items():
-                        if code.startswith("HUL2"):
-                            course = course_data.copy()
-                            prereq_string = course.get("prereqs", "")
-                            course["prereqs_parsed"] = parse_prereqs(prereq_string)
-                            course["type"] = "HUL2XX"
-                            selected_courses[sem_idx].append(course)
-                else:
-                     selected_courses[sem_idx].append({
-                        "code": course_code,
-                        "title": "Humanities (Level 200)",
-                        "credits": 3, # Standard
-                        "type": "HUL2XX"
-                    })
+                for code, course_data in all_courses.items():
+                    if code.startswith("HUL2"):
+                        course = course_data.copy()
+                        prereq_string = course.get("prereqs", "")
+                        course["prereqs_parsed"] = parse_prereqs(prereq_string)
+                        course["type"] = "HUL2XX"
+                        selected_courses[sem_idx].append(course)
             
             # Handle HUL3XX placeholder
             elif course_code == "HUL3XX":
-                if expand:
-                    for code, course_data in all_courses.items():
-                        if code.startswith("HUL3"):
-                            course = course_data.copy()
-                            prereq_string = course.get("prereqs", "")
-                            course["prereqs_parsed"] = parse_prereqs(prereq_string)
-                            course["type"] = "HUL3XX"
-                            selected_courses[sem_idx].append(course)
-                else:
-                    selected_courses[sem_idx].append({
-                        "code": course_code,
-                        "title": "Humanities (Level 300)",
-                        "credits": 3,
-                        "type": "HUL3XX"
-                    })
+                for code, course_data in all_courses.items():
+                    if code.startswith("HUL3"):
+                        course = course_data.copy()
+                        prereq_string = course.get("prereqs", "")
+                        course["prereqs_parsed"] = parse_prereqs(prereq_string)
+                        course["type"] = "HUL3XX"
+                        selected_courses[sem_idx].append(course)
             
-            # Handle OC (Open Course) placeholders
+            # Handle OC (Open Course) placeholders - skip for now
             elif course_code.startswith("OC"):
-                # Always add placeholder for OC as we generally don't expand ALL courses for OC
-                selected_courses[sem_idx].append({
-                        "code": course_code,
-                        "title": "Open Category Elective",
-                        "credits": 3,
-                        "type": "OC"
-                    })
+                continue
             
             # Regular course
             elif course_code in all_courses:
@@ -115,28 +83,10 @@ def build_selected_courses(department: dict, all_courses: dict, expand: bool = T
                 prereq_string = course.get("prereqs", "")
                 course["prereqs_parsed"] = parse_prereqs(prereq_string)
                 course["type"] = "Core"
-                
-                # Normalize 'name' to 'title'
-                if "name" in course and "title" not in course:
-                    course["title"] = course["name"]
-                
-                # Normalize 'hours' to l, t, p
-                if "hours" in course:
-                    course["l"] = course["hours"].get("lecture", 0)
-                    course["t"] = course["hours"].get("tutorial", 0)
-                    course["p"] = course["hours"].get("practical", 0)
-                
                 selected_courses[sem_idx].append(course)
             
             else:
-                # If course not found but requested (maybe a specific code), just add it nicely
-                 selected_courses[sem_idx].append({
-                        "code": course_code,
-                        "title": "Unknown Course",
-                        "credits": 0,
-                        "l": 0, "t": 0, "p": 0,
-                        "type": "Unknown"
-                    })
+                print(f"⚠ Warning: {course_code} not found in courses.json")
     
     return selected_courses
 
@@ -237,7 +187,7 @@ def main():
     
     # Create user (this would come from user input in a real app)
     user = UserData(
-        name="Snehal",
+        name="Monisha",
         current_semester=4,
         core_courses=selected_courses,
         completed_corecourses=[
@@ -253,10 +203,10 @@ def main():
     
     # Save courses_left
     save_json(courses_left, "courses_left.json")
-    print("\n✅ Courses left saved to 'courses_left.json'")
+    print(f"\n✅ Courses left saved to 'courses_left.json'")
     
     # Print summary
-    print("\n📊 Summary:")
+    print(f"\n📊 Summary:")
     for sem in sorted(courses_left.keys()):
         hul_count = sum(1 for c in courses_left[sem] if c.get("type", "").startswith("HUL"))
         de_count = sum(1 for c in courses_left[sem] if c.get("type") == "DE")
@@ -290,6 +240,10 @@ def main():
     overlap_list = parse_overlaps(overlap_string)
     planner.add_overlap_constraints(courses_left, overlap_list)
     print("Overlap constraints added")
+
+    #ADD slotting constraints 
+    planner.add_slotting_constraints(courses_left)
+    print("Slotting constraints added")
     
     # Print pre-solve debug info
     remaining_target = (CONFIG["TOTAL_TARGET_CREDITS"] - credits_done) * CONFIG["CREDIT_SCALE"]
